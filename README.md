@@ -1,0 +1,1 @@
+Some example plays for ansible.

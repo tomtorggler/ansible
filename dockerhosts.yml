@@ -1,0 +1,44 @@
+---
+- hosts: dockerhosts
+  remote_user: root
+
+  vars:
+    - docker_port: 2376
+
+  tasks:
+  - name: Add Docker Repo
+    yum_repository:
+      name: docker
+      description: Docker Repository
+      file: external_repos
+      baseurl: https://yum.dockerproject.org/repo/main/centos/7/
+      gpgcheck: yes
+      enabled: yes
+
+  - name: Ensure docker-engine is installed
+    yum:
+      name: docker-engine
+      state: latest
+
+  - name: Create Firewall rules
+    firewalld: port={{ item.port }}/tcp permanent=true state=enabled immediate=true
+    #firewalld: service={{ item.name }} permanent=true state=enabled
+    # as docker is not defined, using port numbers
+    with_items:
+      - { port: '80', name: 'http' }
+      - { port: '443', name: 'https' }
+      - { port: "{{ docker_port }}", name: 'docker' }
+
+  - name: Configure Service
+    copy:
+      content: |
+        [Service]
+        ExecStart=/usr/bin/dockerd -H tcp://0.0.0.0:{{ docker_port }}
+      dest: /etc/systemd/system/docker.service.d/docker.conf
+
+  # on a system managed by systemd, we could actually use the 'systemd' module...
+  - name: Enable Systemd Service
+    command: systemctl enable docker.service
+
+  - name: Start Systemd Service
+    command: systemctl start docker
