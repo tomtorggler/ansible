@@ -1,1 +1,1 @@
-Some example plays for ansible.
+Some example plays for Ansible.

@@ -23,7 +23,7 @@
   - name: Create Firewall rules
     firewalld: port={{ item.port }}/tcp permanent=true state=enabled immediate=true
     #firewalld: service={{ item.name }} permanent=true state=enabled
-    # as docker is not defined, using port numbers
+    # as docker is not defined as a service, we're using port numbers
     with_items:
       - { port: '80', name: 'http' }
       - { port: '443', name: 'https' }

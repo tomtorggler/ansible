@@ -1,0 +1,5 @@
+# on macOS: /usr/local/etc/ansible/hosts
+[ubuntu]
+192.168.236.135 ansible_connection=ssh ansible_port=22 ansible_user=tom ansible_su_user=tom ansible_su_pass=*
+[dockerhosts]
+rhel01 ansible_connection=ssh ansible_port=22 ansible_user=root
