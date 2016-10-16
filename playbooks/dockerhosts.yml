@@ -13,12 +13,24 @@
       file: external_repos
       baseurl: https://yum.dockerproject.org/repo/main/centos/7/
       gpgcheck: yes
+      gpgkey: https://yum.dockerproject.org/gpg
       enabled: yes
 
   - name: Ensure docker-engine is installed
     yum:
       name: docker-engine
       state: latest
+
+  # CentOS minimale does not include firewalld, install
+  - name: Ensure firewalld is installed
+    yum:
+      name: firewalld
+      state: latest
+    when: (ansible_distribution == "CentOS" and ansible_distribution_release == "Core")
+
+  - name: Start Systemd Service
+    command: systemctl start firewalld
+    when: (ansible_distribution == "CentOS" and ansible_distribution_release == "Core")
 
   - name: Create Firewall rules
     firewalld: port={{ item.port }}/tcp permanent=true state=enabled immediate=true
@@ -29,16 +41,21 @@
       - { port: '443', name: 'https' }
       - { port: "{{ docker_port }}", name: 'docker' }
 
+  - name: Ensure the service configuration directory exists
+    file: path=/etc/systemd/system/docker.service.d state=directory
+  
+  # configure docker.service parameters. note the ExecStart= line w/o command is required 
   - name: Configure Service
     copy:
       content: |
         [Service]
+        ExecStart=
         ExecStart=/usr/bin/dockerd -H tcp://0.0.0.0:{{ docker_port }}
       dest: /etc/systemd/system/docker.service.d/docker.conf
 
   # on a system managed by systemd, we could actually use the 'systemd' module...
-  - name: Enable Systemd Service
+  - name: Enable docker service
     command: systemctl enable docker.service
 
-  - name: Start Systemd Service
+  - name: Start docker service
     command: systemctl start docker
